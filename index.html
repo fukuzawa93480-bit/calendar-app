@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>予定管理カレンダー</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== ヘッダー ===== -->
+<header class="header">
+  <div class="header-left">
+    <button class="hamburger" id="sidebarToggle">&#9776;</button>
+    <img src="icon.svg" class="logo-icon" alt="logo">
+    <span class="logo">カレンダー</span>
+  </div>
+  <div class="header-center">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="予定を検索...">
+      <button class="search-clear" id="searchClear">✕</button>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn-today" id="btnToday">今日</button>
+    <div class="view-switcher">
+      <button class="view-btn active" data-view="month">月</button>
+      <button class="view-btn" data-view="week">週</button>
+      <button class="view-btn" data-view="day">日</button>
+    </div>
+    <button class="btn-new-event" id="btnNewEvent">＋ 予定を追加</button>
+  </div>
+</header>
+
+<!-- ===== メインレイアウト ===== -->
+<div class="main-layout">
+
+  <!-- ===== サイドバー ===== -->
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-new-btn" id="sidebarNewBtn">＋ 予定を追加</button>
+
+    <!-- ミニカレンダー -->
+    <div class="mini-calendar">
+      <div class="mini-cal-header">
+        <button class="mini-nav" id="miniPrev">&#8249;</button>
+        <span class="mini-cal-title" id="miniCalTitle"></span>
+        <button class="mini-nav" id="miniNext">&#8250;</button>
+      </div>
+      <div class="mini-cal-grid">
+        <div class="mini-day-label">日</div>
+        <div class="mini-day-label">月</div>
+        <div class="mini-day-label">火</div>
+        <div class="mini-day-label">水</div>
+        <div class="mini-day-label">木</div>
+        <div class="mini-day-label">金</div>
+        <div class="mini-day-label">土</div>
+        <div id="miniCalDays"></div>
+      </div>
+    </div>
+
+    <!-- カレンダーリスト -->
+    <div class="calendar-list">
+      <div class="calendar-list-title">マイカレンダー</div>
+      <label class="cal-item"><input type="checkbox" checked data-cal="personal"><span class="cal-color personal"></span>個人</label>
+      <label class="cal-item"><input type="checkbox" checked data-cal="work"><span class="cal-color work"></span>仕事</label>
+      <label class="cal-item"><input type="checkbox" checked data-cal="holiday"><span class="cal-color holiday"></span>祝日</label>
+      <label class="cal-item"><input type="checkbox" checked data-cal="other"><span class="cal-color other"></span>その他</label>
+    </div>
+  </aside>
+
+  <!-- ===== カレンダー本体 ===== -->
+  <div class="calendar-container">
+
+    <!-- ナビゲーションバー -->
+    <div class="cal-nav">
+      <button class="nav-btn" id="btnPrev">&#8249;</button>
+      <h2 class="cal-title" id="calTitle"></h2>
+      <button class="nav-btn" id="btnNext">&#8250;</button>
+    </div>
+
+    <!-- 月表示 -->
+    <div class="view-container" id="monthView">
+      <div class="month-grid">
+        <div class="day-header">日</div>
+        <div class="day-header">月</div>
+        <div class="day-header">火</div>
+        <div class="day-header">水</div>
+        <div class="day-header">木</div>
+        <div class="day-header">金</div>
+        <div class="day-header">土</div>
+      </div>
+      <div class="month-body" id="monthBody"></div>
+    </div>
+
+    <!-- 週表示 -->
+    <div class="view-container hidden" id="weekView">
+      <div class="week-header-row" id="weekHeaderRow"></div>
+      <div class="week-body">
+        <div class="time-col" id="timeCol"></div>
+        <div class="week-grid" id="weekGrid"></div>
+      </div>
+    </div>
+
+    <!-- 日表示 -->
+    <div class="view-container hidden" id="dayView">
+      <div class="day-header-bar" id="dayHeaderBar"></div>
+      <div class="day-body">
+        <div class="time-col" id="dayTimeCol"></div>
+        <div class="day-grid" id="dayGrid"></div>
+      </div>
+    </div>
+
+    <!-- 検索結果 -->
+    <div class="search-results hidden" id="searchResults">
+      <h3 class="search-results-title">検索結果</h3>
+      <div id="searchResultsList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== イベント追加・編集モーダル ===== -->
+<div class="modal-overlay hidden" id="eventModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">予定を追加</h3>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <input type="text" id="eventTitle" placeholder="タイトル（必須）" class="form-input title-input">
+      </div>
+      <div class="form-group form-row">
+        <label class="form-label">
+          <input type="checkbox" id="allDayCheck"> 終日
+        </label>
+      </div>
+      <div class="form-group form-row" id="dateTimeRow">
+        <div class="form-col">
+          <label class="form-label">開始</label>
+          <input type="date" id="startDate" class="form-input">
+          <input type="time" id="startTime" class="form-input" value="09:00">
+        </div>
+        <div class="form-col">
+          <label class="form-label">終了</label>
+          <input type="date" id="endDate" class="form-input">
+          <input type="time" id="endTime" class="form-input" value="10:00">
+        </div>
+      </div>
+      <div class="form-group">
+        <input type="text" id="eventLocation" placeholder="📍 場所を追加" class="form-input">
+      </div>
+      <div class="form-group">
+        <textarea id="eventDesc" placeholder="📝 メモを追加" class="form-input form-textarea" rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">カレンダー</label>
+        <select id="eventCal" class="form-input form-select">
+          <option value="personal">個人</option>
+          <option value="work">仕事</option>
+          <option value="holiday">祝日</option>
+          <option value="other">その他</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">色</label>
+        <div class="color-picker" id="colorPicker">
+          <button class="color-btn active" data-color="#4285F4" style="background:#4285F4"></button>
+          <button class="color-btn" data-color="#EA4335" style="background:#EA4335"></button>
+          <button class="color-btn" data-color="#34A853" style="background:#34A853"></button>
+          <button class="color-btn" data-color="#FBBC04" style="background:#FBBC04"></button>
+          <button class="color-btn" data-color="#FF6D00" style="background:#FF6D00"></button>
+          <button class="color-btn" data-color="#46BDC6" style="background:#46BDC6"></button>
+          <button class="color-btn" data-color="#7986CB" style="background:#7986CB"></button>
+          <button class="color-btn" data-color="#E67C73" style="background:#E67C73"></button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">繰り返し</label>
+        <select id="eventRepeat" class="form-input form-select">
+          <option value="none">繰り返しなし</option>
+          <option value="daily">毎日</option>
+          <option value="weekly">毎週</option>
+          <option value="monthly">毎月</option>
+          <option value="yearly">毎年</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">通知</label>
+        <select id="eventReminder" class="form-input form-select">
+          <option value="none">通知なし</option>
+          <option value="0">当日</option>
+          <option value="10">10分前</option>
+          <option value="30">30分前</option>
+          <option value="60">1時間前</option>
+          <option value="1440">1日前</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-delete hidden" id="btnDelete">削除</button>
+      <div class="modal-footer-right">
+        <button class="btn-cancel" id="btnCancel">キャンセル</button>
+        <button class="btn-save" id="btnSave">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== イベント詳細ポップアップ ===== -->
+<div class="event-popup hidden" id="eventPopup">
+  <div class="popup-header">
+    <div class="popup-color-bar" id="popupColorBar"></div>
+    <div class="popup-actions">
+      <button class="popup-btn" id="popupEdit" title="編集">✏️</button>
+      <button class="popup-btn" id="popupDelete" title="削除">🗑️</button>
+      <button class="popup-btn" id="popupClose" title="閉じる">✕</button>
+    </div>
+  </div>
+  <div class="popup-body">
+    <h4 class="popup-title" id="popupTitle"></h4>
+    <div class="popup-info" id="popupDateTime"></div>
+    <div class="popup-info" id="popupLocation"></div>
+    <div class="popup-info" id="popupDesc"></div>
+    <div class="popup-info" id="popupCal"></div>
+  </div>
+</div>
+
+<div class="overlay-bg hidden" id="overlayBg"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
