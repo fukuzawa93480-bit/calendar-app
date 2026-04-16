@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>アイコンサンプル</title>
+  <style>
+    body { background: #eee; display: flex; flex-direction: column; align-items: center; gap: 40px; padding: 40px; font-family: sans-serif; }
+    .box { background: white; padding: 30px 40px; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,.15); }
+    h3 { margin-bottom: 16px; color: #555; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <div class="box">
+    <h3>ロゴ（実物サイズ）</h3>
+    <svg id="logo" xmlns="http://www.w3.org/2000/svg" style="display:block;"></svg>
+  </div>
+
+  <div class="box">
+    <h3>アプリヘッダーサイズ（32px 円形）</h3>
+    <div style="width:32px;height:32px;border-radius:50%;overflow:hidden;border:1px solid #ddd;">
+      <svg id="icon32" xmlns="http://www.w3.org/2000/svg" width="32" height="32" style="display:block;"></svg>
+    </div>
+  </div>
+
+  <div class="box">
+    <h3>ホーム画面アイコンサイズ（60px）</h3>
+    <div style="width:60px;height:60px;border-radius:12px;overflow:hidden;border:1px solid #ddd;">
+      <svg id="icon60" xmlns="http://www.w3.org/2000/svg" width="60" height="60" style="display:block;"></svg>
+    </div>
+  </div>
+
+<script>
+const NS    = 'http://www.w3.org/2000/svg';
+const NAVY  = '#1e2d7d';
+const BLACK = '#111111';
+
+// ---- レイアウト定数 ----
+const VH       = 155;  // viewBox 高さ
+const TOP_Y    = 62;   // F の上横線 ＝ A の横棒 Y（Aの中間位置）
+const MID_Y    = 108;  // F の中横線 Y
+const BOT_Y    = 150;  // F の左斜め線・下端 Y
+const A_PEAK_Y = 6;    // A の頂点 Y（TOP_Y より大きく上）
+const A_BOT_Y  = 122;  // A の足元 Y
+const DIAG_TX  = 44;   // F の斜め線・上端 X
+const DIAG_BX  = 10;   // F の斜め線・下端 X
+const TEXT_X   = 52;   // UKUZAW テキスト開始 X
+const TEXT_Y   = 132;  // UKUZAW ベースライン Y
+const FS       = 82;   // フォントサイズ
+const SW       = 5;    // 線の太さ
+
+// F の斜め線の傾き（垂直方向/水平方向）
+const F_SLOPE = (BOT_Y - TOP_Y) / (DIAG_TX - DIAG_BX); // (148-38)/(44-10) = 110/34 ≈ 3.24
+
+const logo = document.getElementById('logo');
+
+// ---- UKUZAW テキストを追加して幅を計測 ----
+const kuzawEl = document.createElementNS(NS, 'text');
+kuzawEl.setAttribute('x', TEXT_X);
+kuzawEl.setAttribute('y', TEXT_Y);
+kuzawEl.setAttribute('font-family', "'Arial Black','Arial',sans-serif");
+kuzawEl.setAttribute('font-size', FS);
+kuzawEl.setAttribute('font-weight', '900');
+kuzawEl.setAttribute('font-style', 'italic');
+kuzawEl.setAttribute('fill', BLACK);
+kuzawEl.textContent = 'UKUZAW';
+logo.appendChild(kuzawEl);
+
+requestAnimationFrame(() => {
+  const kb = kuzawEl.getBBox();
+  const kRight = kb.x + kb.width;  // UKUZAW の右端 X
+
+  // ---- A の座標計算 ----
+  // 左脚: F と同じ傾きで (aLx, A_BOT_Y) → (aPx, A_PEAK_Y)
+  const A_V = A_BOT_Y - A_PEAK_Y;         // 縦幅 = 120
+  const aLegH = A_V / F_SLOPE;            // 左脚の水平幅 ≈ 37
+
+  const aLx = kRight + 2;                 // 左足 X
+  const aPx = aLx + aLegH;               // 頂点 X
+  const aRx = aPx + 20;                  // 右足 X（右脚はやや急角度）
+
+  // A の横棒が TOP_Y と交わる右脚上の X を求める
+  // 右脚: (aPx, A_PEAK_Y) → (aRx, A_BOT_Y)
+  const t_cross = (TOP_Y - A_PEAK_Y) / (A_BOT_Y - A_PEAK_Y);
+  const xCrossR = aPx + (aRx - aPx) * t_cross;  // 右脚が TOP_Y と交わる X
+
+  const VW = aRx + 12;
+
+  // ---- 描画ヘルパー ----
+  function mkLine(x1,y1,x2,y2,sw,cap) {
+    const el = document.createElementNS(NS,'line');
+    el.setAttribute('x1',x1); el.setAttribute('y1',y1);
+    el.setAttribute('x2',x2); el.setAttribute('y2',y2);
+    el.setAttribute('stroke', NAVY);
+    el.setAttribute('stroke-width', sw||SW);
+    el.setAttribute('stroke-linecap', cap||'round');
+    return el;
+  }
+
+  // 1. F の左斜め線
+  logo.insertBefore(mkLine(DIAG_BX, BOT_Y, DIAG_TX, TOP_Y, SW+1), kuzawEl);
+
+  // 2. F の上横線 ＋ A の横棒（一本の線で DIAG_TX → xCrossR まで）
+  logo.insertBefore(mkLine(DIAG_TX, TOP_Y, xCrossR, TOP_Y, SW), kuzawEl);
+
+  // 3. F の中横線
+  logo.insertBefore(mkLine(DIAG_TX-10, MID_Y, DIAG_TX+28, MID_Y, SW-1), kuzawEl);
+
+  // 4. A の左脚（F と同角度）
+  logo.appendChild(mkLine(aLx, A_BOT_Y, aPx, A_PEAK_Y, SW+3));
+
+  // 5. A の右脚
+  logo.appendChild(mkLine(aPx, A_PEAK_Y, aRx, A_BOT_Y, SW+3));
+
+  // ---- viewBox・width 確定 ----
+  logo.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+  logo.setAttribute('width', VW);
+  logo.setAttribute('height', VH);
+
+  // icon32 / icon60 にコピー
+  ['icon32','icon60'].forEach(id => {
+    const el = document.getElementById(id);
+    el.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+    el.innerHTML = logo.innerHTML;
+  });
+});
+</script>
+</body>
+</html>
