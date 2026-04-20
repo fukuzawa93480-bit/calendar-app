@@ -400,7 +400,7 @@ function openNewEventModal(dateStr, time) {
   $('eventCal').value = 'personal';
   $('eventRepeat').value = 'none';
   $('eventReminder').value = 'none';
-  $('allDayCheck').checked = !time;
+  $('allDayCheck').checked = false;
   $('startDate').value = dateStr || today();
   $('endDate').value = dateStr || today();
   if (time) {
